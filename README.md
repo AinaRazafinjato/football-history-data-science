@@ -1,67 +1,88 @@
-# Data Science Project
+# Football History Data Science Project
 
-This project is designed to perform web scraping, data analysis, and machine learning model evaluation in a structured manner. Below is an overview of the project structure and its components.
+This project analyzes historical football (soccer) data to uncover trends, patterns, and insights across different leagues, tournaments, and time periods. The project combines web scraping, data analysis, and machine learning model evaluation in a structured workflow.
 
 ## Project Structure
 
 ```
-data-science-project
+football_history
 ├── src
-│   ├── scraping          # Contains web scraping functionality
+│   ├── scraping          # Web scraping functionality
 │   │   ├── __init__.py
 │   │   └── scrapers.py
-│   ├── data             # Contains data preprocessing functions
+│   ├── data              # Data preprocessing functions
 │   │   ├── __init__.py
 │   │   └── preprocessing.py
-│   ├── analysis          # Contains exploratory data analysis functions
+│   ├── analysis          # Exploratory data analysis functions
 │   │   ├── __init__.py
 │   │   └── exploratory.py
-│   ├── models           # Contains machine learning model evaluation functions
+│   ├── models            # Machine learning model evaluation functions
 │   │   ├── __init__.py
 │   │   └── evaluation.py
-│   └── utils            # Contains utility functions
+│   └── utils             # Utility functions
 │       ├── __init__.py
 │       └── helpers.py
-├── notebooks             # Jupyter notebooks for analysis and evaluation
+├── notebooks             # Jupyter notebooks for analysis
 │   ├── exploratory_analysis.ipynb
 │   └── model_evaluation.ipynb
-├── tests                 # Unit tests for the project
+├── tests                 # Unit tests
 │   ├── __init__.py
 │   ├── test_scraping.py
 │   ├── test_preprocessing.py
 │   └── test_models.py
-├── data                  # Directory for storing data
-│   ├── raw              # Raw data from web scraping
-│   ├── processed        # Processed data ready for analysis
-│   └── results          # Results from model evaluations and analyses
+├── data                  # Data storage
+│   ├── raw               # Raw data from web scraping
+│   ├── processed         # Processed data for analysis
+│   └── results           # Results from models and analyses
 ├── requirements.txt      # Project dependencies
-├── setup.py              # Project packaging and metadata
+├── setup.py              # Project packaging
 ├── .gitignore            # Files to ignore in version control
 └── README.md             # Project documentation
 ```
 
+## Purpose
+
+This project aims to:
+- Create a comprehensive database of football statistics
+- Analyze performance trends of clubs and national teams
+- Identify key success factors in football performance
+- Visualize the evolution of playing styles and tactics
+- Provide data-driven insights for football enthusiasts
+
 ## Installation
 
-To set up the project, clone the repository and install the required dependencies:
+To set up the project:
 
 ```bash
-git clone <repository-url>
-cd data-science-project
+git clone https://github.com/username/football_history.git
+cd football_history
 pip install -r requirements.txt
 ```
 
 ## Usage
 
-1. **Web Scraping**: Use the `WebScraper` class in `src/scraping/scrapers.py` to fetch and parse data from the web.
-2. **Data Preprocessing**: Utilize functions in `src/data/preprocessing.py` to clean and prepare your data for analysis.
-3. **Exploratory Data Analysis**: Perform EDA using the functions in `src/analysis/exploratory.py` or by running the Jupyter notebook `notebooks/exploratory_analysis.ipynb`.
-4. **Model Evaluation**: Evaluate machine learning models using the functions in `src/models/evaluation.py` or by running the notebook `notebooks/model_evaluation.ipynb`.
-5. **Testing**: Run the tests located in the `tests` directory to ensure all components are functioning correctly.
+1. **Data Collection**: Use the scrapers in `src/scraping/scrapers.py` to collect football data
+2. **Data Preprocessing**: Clean and prepare data with functions in `src/data/preprocessing.py`
+3. **Analysis**: Perform exploratory analysis using `src/analysis/exploratory.py`
+4. **Modeling**: Evaluate predictive models with `src/models/evaluation.py`
+5. **Visualization**: Generate insights through notebooks in the `notebooks` directory
+
+## Tech Stack
+
+- **Data Collection**: Python web scraping tools, APIs
+- **Processing**: Pandas, NumPy
+- **Analysis**: Scikit-learn, SciPy, statsmodels
+- **Visualization**: Matplotlib, Seaborn, Plotly
+- **Storage**: SQLite/PostgreSQL
+
+## Current Status
+
+This project is in active development with ongoing work on data collection and preprocessing pipelines.
 
 ## Contributing
 
-Contributions are welcome! Please submit a pull request or open an issue for any suggestions or improvements.
+Contributions are welcome! Please submit pull requests or open issues for any suggestions.
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for more details.
+This project is licensed under the MIT License.
