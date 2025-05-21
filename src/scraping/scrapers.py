@@ -23,7 +23,7 @@ Usage:
 import pandas as pd
 from pathlib import Path
 from loguru import logger
-from typing import Optional, List
+from typing import Optional
 import os
 
 
@@ -137,6 +137,34 @@ class WebScraper:
             str: The extracted league name
         """
         try:
+            # Parse the URL to get relevant parts
+            url_parts = url.split('/')
+            
+            # Extract the league name from the URL structure
+            # For URLs like: .../comps/9/schedule/Premier-League-Scores-and-Fixtures
+            # Or URLs like: .../comps/9/2023-2024/schedule/2023-2024-Premier-League-Scores-and-Fixtures
+            if 'schedule' in url_parts:
+                schedule_index = url_parts.index('schedule')
+                if schedule_index + 1 < len(url_parts):
+                    name_part = url_parts[schedule_index + 1]
+                    
+                    # Remove any season years from the beginning of the name
+                    if '-' in name_part:
+                        # Check for patterns like "2023-2024-Premier-League-Scores-and-Fixtures"
+                        parts = name_part.split('-')
+                        if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
+                            name_part = '-'.join(parts[2:])  # Skip the "2023-2024" part
+                    
+                    # Split by dash and remove common words
+                    elements = name_part.split('-')
+                    exclude = {"Scores", "and", "Fixtures"}
+                    league_parts = [el for el in elements if el not in exclude]
+                    league_name = "-".join(league_parts)
+                    
+                    logger.debug(f"Extracted league name: {league_name}")
+                    return league_name
+            
+            # Fallback to old behavior
             last_part = url.split('/')[-1]
             elements = last_part.split('-')
             exclude = {"Scores", "and", "Fixtures"}
