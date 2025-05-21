@@ -35,7 +35,6 @@ football_history
 │   ├── processed         # Processed data for analysis
 │   └── results           # Results from models and analyses
 ├── requirements.txt      # Project dependencies
-├── setup.py              # Project packaging
 ├── .gitignore            # Files to ignore in version control
 └── README.md             # Project documentation
 ```
