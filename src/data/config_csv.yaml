@@ -1,0 +1,55 @@
+columns:
+  rows_to_drop:
+    - Date
+    - Home
+    - Away
+    - Venue
+  columns_to_drop:
+    - Day
+    - Match Report
+    - Notes
+    - Venue
+    - Attendance
+    - Referee
+  required_columns:
+    - Score
+    - Wk
+  cols_to_convert_int:
+    - Wk
+    - Score_Home
+    - Score_Away
+  cols_to_convert_float:
+    - xG_Home
+    - xG_Away
+  cols_order:
+    - Wk
+    - Date
+    - Time
+    - Home
+    - xG_Home
+    - Score_Home
+    - Score_Away
+    - xG_Away
+    - Away
+
+team_name_corrections:
+  Utd: "United"
+  Nott'ham: "Nottingham"
+  Wolves: "Wolverhampton Wanderers"
+  Brighton: "Brighton & Hove Albion"
+  Tottenham: "Tottenham Hotspur"
+  West Ham: "West Ham United"
+  FC: ""
+  AFC: ""
+  Man: "Manchester"
+  Spurs: "Tottenham Hotspur"
+
+paths:
+  raw_dir: "raw"
+  processed_dir: "processed"
+  logs_dir: "logs"
+
+files:
+  default_csv: "raw/Premier-League-2024-2025.csv"
+  process_all: true  # Nouvelle option pour traiter tous les fichiers
+  file_pattern: "*.csv"  # Pattern pour sélectionner les fichiers

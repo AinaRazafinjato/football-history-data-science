@@ -1,0 +1,21 @@
+urls:
+  premier_league: "https://fbref.com/en/comps/9/schedule/Premier-League-Scores-and-Fixtures"
+  la_liga: "https://fbref.com/en/comps/12/schedule/La-Liga-Scores-and-Fixtures"
+  bundesliga: "https://fbref.com/en/comps/20/schedule/Bundesliga-Scores-and-Fixtures"
+  serie_a: "https://fbref.com/en/comps/11/schedule/Serie-A-Scores-and-Fixtures"
+  ligue_1: "https://fbref.com/en/comps/13/schedule/Ligue-1-Scores-and-Fixtures"
+
+# Configuration pour les années précédentes
+historical:
+  enabled: false
+  years:
+    - 2023
+    - 2022
+    - 2021
+  template: "https://fbref.com/en/comps/9/{year}-{year_plus_one}/schedule/{year}-{year_plus_one}-Premier-League-Scores-and-Fixtures"
+
+# Options générales
+options:
+  default_league: "premier_league"
+  save_raw_data: true
+  logging_level: "INFO"

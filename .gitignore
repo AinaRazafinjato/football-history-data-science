@@ -15,3 +15,9 @@ env/
 
 # OS generated files
 .DS_Store
+
+# CSV files
+*.csv
+
+# Logs files
+*.log

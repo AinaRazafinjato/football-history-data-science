@@ -10,8 +10,8 @@ in a structured format for further analysis.
 Usage:
     from football_history.src.scraping import WebScraper
     
-    # Create a scraper instance with a FBref URL
-    scraper = WebScraper("https://fbref.com/en/comps/9/schedule/Premier-League-Scores-and-Fixtures")
+    # Create a scraper instance with a FBref URL from config
+    scraper = WebScraper()
     
     # Parse the data
     df = scraper.parse_data()
@@ -21,9 +21,10 @@ Usage:
 """
 
 import pandas as pd
+import yaml
 from pathlib import Path
 from loguru import logger
-from typing import Optional
+from typing import Optional, Dict, List, Union
 import os
 
 
@@ -32,6 +33,38 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 
 # Define the data directory
 DATA_DIR = os.path.join(BASE_DIR, 'data')
+
+
+def load_config(config_path: str = "config_url.yaml") -> Dict:
+    """
+    Load configuration from YAML file.
+    
+    Args:
+        config_path: Path to the configuration file
+        
+    Returns:
+        Dict: Configuration data
+        
+    Raises:
+        FileNotFoundError: If config file doesn't exist
+        yaml.YAMLError: If config file has invalid YAML
+    """
+    try:
+        # Get the directory of the current script
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # Create full path to config file
+        full_path = os.path.join(current_dir, config_path)
+        
+        with open(full_path, 'r') as f:
+            config = yaml.safe_load(f)
+            logger.info(f"Configuration loaded from {config_path}")
+            return config
+    except FileNotFoundError:
+        logger.error(f"Config file not found: {config_path}")
+        raise
+    except yaml.YAMLError as e:
+        logger.error(f"Error parsing config file: {e}")
+        raise
 
 
 class WebScraper:
@@ -44,20 +77,34 @@ class WebScraper:
     Attributes:
         url (str): The URL to scrape data from
         data (pd.DataFrame): The scraped data after parsing
+        config (Dict): Configuration loaded from YAML
     
     Example URLs:
         - Current season: https://fbref.com/en/comps/9/schedule/Premier-League-Scores-and-Fixtures
         - Past season: https://fbref.com/en/comps/9/2023-2024/schedule/2023-2024-Premier-League-Scores-and-Fixtures
     """
     
-    def __init__(self, url: str):
+    def __init__(self, url: Optional[str] = None, config_path: str = "config_url.yaml"):
         """
-        Initialize the WebScraper with a target URL.
+        Initialize the WebScraper with a target URL or config.
         
         Args:
-            url (str): The FBref URL to scrape data from
+            url (str, optional): The FBref URL to scrape data from.
+                                If None, the default URL from config will be used.
+            config_path (str): Path to the configuration file
         """
-        self.url = url
+        # Load configuration
+        self.config = load_config(config_path)
+        
+        # Set URL from parameter or config
+        if url:
+            self.url = url
+        else:
+            # Get default league from config
+            default_league = self.config["options"]["default_league"]
+            self.url = self.config["urls"][default_league]
+            logger.info(f"Using default URL for {default_league}: {self.url}")
+            
         self.data = None
 
     def parse_data(self) -> pd.DataFrame:
@@ -191,6 +238,11 @@ class WebScraper:
             ValueError: If there is no data to save
             IOError: If there's an error saving the file
         """
+        # Check if saving is enabled in config
+        if not self.config["options"].get("save_raw_data", True):
+            logger.info("Saving raw data is disabled in config")
+            return False
+            
         if self.data is None:
             logger.error("No data available to save")
             raise ValueError("No data to save. Call parse_data() first.")
@@ -214,26 +266,125 @@ class WebScraper:
         except Exception as e:
             logger.error(f"Error saving data: {e}")
             raise IOError(f"Error saving data: {e}")
+            
+    def scrape_historical_data(self) -> Dict[str, pd.DataFrame]:
+        """
+        Scrape historical data for multiple seasons based on config.
+        
+        Returns:
+            Dict[str, pd.DataFrame]: Dictionary of DataFrames by season
+            
+        Raises:
+            ValueError: If historical scraping is disabled or configuration is invalid
+        """
+        if not self.config.get("historical", {}).get("enabled", False):
+            logger.info("Historical data scraping is disabled in config")
+            return {}
+            
+        try:
+            years = self.config["historical"]["years"]
+            template = self.config["historical"]["template"]
+            results = {}
+            
+            for year in years:
+                year_plus_one = year + 1
+                url = template.format(year=year, year_plus_one=year_plus_one)
+                logger.info(f"Scraping historical data for {year}-{year_plus_one} from {url}")
+                
+                # Create a new scraper for this URL
+                temp_scraper = WebScraper(url, config_path="config_url.yaml")
+                df = temp_scraper.parse_data()
+                
+                # Save if configured
+                if self.config["options"].get("save_raw_data", True):
+                    temp_scraper.save_to_csv()
+                    
+                # Add to results
+                season_key = f"{year}-{year_plus_one}"
+                results[season_key] = df
+                
+            return results
+        except Exception as e:
+            logger.error(f"Error scraping historical data: {e}")
+            raise ValueError(f"Error scraping historical data: {e}")
 
 
-def scrape_league(url: str, save: bool = True) -> pd.DataFrame:
+def scrape_league(league_key: Optional[str] = None, url: Optional[str] = None, 
+                 save: Optional[bool] = None, config_path: str = "config_url.yaml") -> pd.DataFrame:
     """
     Convenience function to scrape a league schedule and optionally save it.
     
     Args:
-        url (str): FBref URL for the league
-        save (bool, optional): Whether to save the data as CSV. Defaults to True.
+        league_key (str, optional): Key of the league in config (e.g., "premier_league")
+        url (str, optional): FBref URL for the league (overrides league_key)
+        save (bool, optional): Whether to save the data as CSV. If None, uses config.
+        config_path (str): Path to the configuration file
         
     Returns:
         pd.DataFrame: The scraped league data
         
     Example:
-        >>> df = scrape_league("https://fbref.com/en/comps/9/schedule/Premier-League-Scores-and-Fixtures")
+        >>> df = scrape_league("premier_league")
+        >>> df = scrape_league(url="https://fbref.com/en/comps/9/schedule/Premier-League-Scores-and-Fixtures")
     """
-    scraper = WebScraper(url)
+    # Load configuration
+    config = load_config(config_path)
+    
+    # Determine the URL to use
+    scrape_url = None
+    if url:
+        scrape_url = url
+    elif league_key:
+        if league_key in config["urls"]:
+            scrape_url = config["urls"][league_key]
+        else:
+            raise ValueError(f"League key '{league_key}' not found in config")
+    else:
+        # Use default league from config
+        default_league = config["options"]["default_league"]
+        scrape_url = config["urls"][default_league]
+    
+    # Create scraper
+    scraper = WebScraper(scrape_url, config_path=config_path)
+    
+    # Parse data
     data = scraper.parse_data()
     
-    if save:
+    # Determine whether to save
+    should_save = save if save is not None else config["options"].get("save_raw_data", True)
+    
+    if should_save:
         scraper.save_to_csv()
         
     return data
+
+
+def scrape_all_leagues(save: Optional[bool] = None, 
+                      config_path: str = "config_url.yaml") -> Dict[str, pd.DataFrame]:
+    """
+    Scrape all leagues defined in the configuration.
+    
+    Args:
+        save (bool, optional): Whether to save the data as CSV. If None, uses config.
+        config_path (str): Path to the configuration file
+        
+    Returns:
+        Dict[str, pd.DataFrame]: Dictionary of DataFrames by league key
+    """
+    # Load configuration
+    config = load_config(config_path)
+    
+    # Determine whether to save
+    should_save = save if save is not None else config["options"].get("save_raw_data", True)
+    
+    results = {}
+    for league_key, url in config["urls"].items():
+        try:
+            logger.info(f"Scraping data for {league_key}")
+            df = scrape_league(league_key, save=should_save, config_path=config_path)
+            results[league_key] = df
+        except Exception as e:
+            logger.error(f"Error scraping {league_key}: {e}")
+            continue
+            
+    return results
