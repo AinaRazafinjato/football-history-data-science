@@ -18,4 +18,13 @@ historical:
 options:
   default_league: "premier_league"
   save_raw_data: true
-  logging_level: "INFO"
+
+logging:
+  log_dir: "logs"
+  log_file_template: "scraping_{time:YYYY-MM-DD}.log"
+  console_level: "INFO"
+  file_level: "DEBUG"
+  rotation: "1 day"
+  retention: "30 days"
+  console_format: "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>"
+  file_format: "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>"

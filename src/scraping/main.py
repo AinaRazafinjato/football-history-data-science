@@ -1,7 +1,53 @@
-from scrapers import WebScraper, scrape_league, scrape_all_leagues
+from scrapers import WebScraper, scrape_league, scrape_all_leagues, load_config
 import argparse
 import sys
+import os
+from pathlib import Path
 from loguru import logger
+
+def setup_logger(config_path="config_url.yaml", verbose=False):
+    """Configure the logger based on config settings."""
+    config = load_config(config_path)
+    log_config = config.get("logging", {})
+    
+    # Define logs directory
+    log_dir = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
+                              log_config.get("log_dir", "logs")))
+
+    # Create logs directory if it doesn't exist
+    log_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Remove default configuration
+    logger.remove()
+    
+    # Get formats
+    console_format = log_config.get("console_format", 
+        "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>")
+    file_format = log_config.get("file_format", 
+        "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>")
+    
+    # File logger
+    log_file = os.path.join(log_dir, log_config.get("log_file_template", "scraping_{time:YYYY-MM-DD}.log"))
+    logger.add(
+        log_file,
+        rotation=log_config.get("rotation", "1 day"),
+        retention=log_config.get("retention", "30 days"),
+        level=log_config.get("file_level", "DEBUG") if verbose else log_config.get("file_level", "INFO"),
+        format=file_format,
+        colorize=True,
+        backtrace=True,
+        diagnose=True
+    )
+    
+    # Console logger
+    logger.add(
+        sys.stdout,
+        level=log_config.get("console_level", "DEBUG") if verbose else log_config.get("console_level", "INFO"),
+        format=console_format,
+        colorize=True,
+        backtrace=True,
+        diagnose=True
+    )
 
 def parse_args():
     """Parse command line arguments."""
@@ -12,11 +58,15 @@ def parse_args():
     parser.add_argument("--historical", action="store_true", help="Scrape historical data")
     parser.add_argument("--no-save", action="store_true", help="Don't save to CSV files")
     parser.add_argument("--config", "-c", default="config_url.yaml", help="Path to config file")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
     return parser.parse_args()
 
 def main():
     """Main function to run the scraper from command line."""
     args = parse_args()
+    
+    # Setup logger
+    setup_logger(config_path=args.config, verbose=args.verbose)
     
     try:
         save = not args.no_save
