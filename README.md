@@ -1,87 +1,144 @@
-# Football History Data Science Project
+# 🏆 Football History Data Science Project
 
-This project analyzes historical football (soccer) data to uncover trends, patterns, and insights across different leagues, tournaments, and time periods. The project combines web scraping, data analysis, and machine learning model evaluation in a structured workflow.
+A comprehensive data science project for analyzing football (soccer) match data across multiple leagues and seasons. This project combines web scraping, data processing, exploratory analysis, and predictive modeling to extract insights from historical football data.
 
-## Project Structure
+## 🔍 Project Overview
+
+This project aims to:
+- 📊 Create a comprehensive database of football statistics from multiple leagues
+- 🧹 Clean and standardize data for analysis
+- 📈 Analyze performance trends of clubs and leagues
+- 🔑 Identify key success factors in football performance
+- 🔮 Build predictive models for match outcomes
+- 📉 Visualize insights through notebooks and reports
+
+## 📁 Project Structure
 
 ```
-football_history
-├── src
-│   ├── scraping          # Web scraping functionality
-│   │   ├── __init__.py
-│   │   └── scrapers.py
-│   ├── data              # Data preprocessing functions
-│   │   ├── __init__.py
-│   │   └── preprocessing.py
-│   ├── analysis          # Exploratory data analysis functions
-│   │   ├── __init__.py
-│   │   └── exploratory.py
-│   ├── models            # Machine learning model evaluation functions
-│   │   ├── __init__.py
-│   │   └── evaluation.py
-│   └── utils             # Utility functions
-│       ├── __init__.py
-│       └── helpers.py
-├── notebooks             # Jupyter notebooks for analysis
-│   ├── exploratory_analysis.ipynb
-│   └── model_evaluation.ipynb
-├── tests                 # Unit tests
-│   ├── __init__.py
+football_history/
+├── .env                  # Environment variables
+├── data/                 # Data storage
+│   ├── raw/              # Raw data from web scraping
+│   │   └── *.csv         # Raw league data files
+│   ├── processed/        # Cleaned and standardized data
+│   │   └── *-processed.csv # Processed league data files
+│   └── results/          # Results from models and analyses
+├── notebooks/            # Jupyter notebooks for analysis
+├── src/                  # Source code for the project
+│   ├── analysis/         # Exploratory data analysis functions
+│   ├── data/             # Data preprocessing functions
+│   │   ├── logs/         # Log folder for data processing
+│   │   │   └── *.log     # Log files for processing
+│   │   ├── process_csv.py# Main data processing script
+│   │   ├── config_csv.yaml# Configuration for processing
+│   │   └── README.md     # Usage examples for processing
+│   ├── models/           # Machine learning model implementation
+│   ├── scraping/         # Web scraping functionality
+│   │   ├── logs/         # Log folder for scraping
+│   │   │   └── *.log     # Log files for scraping
+│   │   ├── scrapers.py   # WebScraper class for data collection
+│   │   ├── main.py       # Script to run the scraper
+│   │   ├── config_url.yaml# Configuration for scraping
+│   │   └── README.md     # Usage examples for scraping
+│   └── utils/            # Utility functions
+├── tests/                # Unit tests
 │   ├── test_scraping.py
 │   ├── test_preprocessing.py
 │   └── test_models.py
-├── data                  # Data storage
-│   ├── raw               # Raw data from web scraping
-│   ├── processed         # Processed data for analysis
-│   └── results           # Results from models and analyses
-├── requirements.txt      # Project dependencies
-├── .gitignore            # Files to ignore in version control
-└── README.md             # Project documentation
+├── .gitignore            # Git ignore file
+├── LICENSE               # Project license
+├── README.md             # Project overview and instructions
+└── requirements.txt      # Project dependencies
 ```
 
-## Purpose
-
-This project aims to:
-- Create a comprehensive database of football statistics
-- Analyze performance trends of clubs and national teams
-- Identify key success factors in football performance
-- Visualize the evolution of playing styles and tactics
-- Provide data-driven insights for football enthusiasts
-
-## Installation
+## ⚙️ Installation
 
 To set up the project:
 
 ```bash
-git clone https://github.com/username/football_history.git
+# Clone the repository
+git clone https://github.com/yourusername/football_history.git
 cd football_history
+
+# Create a virtual environment (optional but recommended)
+python -m venv .env
+
+# Activate the virtual environment
+# On Windows
+.env\Scripts\activate
+# On macOS/Linux
+source .env/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-## Usage
+## 🚀 Usage
 
-1. **Data Collection**: Use the scrapers in `src/scraping/scrapers.py` to collect football data
-2. **Data Preprocessing**: Clean and prepare data with functions in `src/data/preprocessing.py`
-3. **Analysis**: Perform exploratory analysis using `src/analysis/exploratory.py`
-4. **Modeling**: Evaluate predictive models with `src/models/evaluation.py`
-5. **Visualization**: Generate insights through notebooks in the `notebooks` directory
+### 🌐 Data Collection
+The project uses web scraping to collect football match data from fbref.com. The main script is located in `src.scraping.main.py`.:
 
-## Tech Stack
+```bash
+# Basic usage - scrape default league
+python -m src.scraping.main
 
-- **Data Collection**: Python web scraping tools, APIs
-- **Processing**: Pandas, NumPy
-- **Analysis**: Scikit-learn, SciPy, statsmodels
-- **Visualization**: Matplotlib, Seaborn, Plotly
-- **Storage**: SQLite/PostgreSQL
+# Scrape a specific league
+python -m src.scraping.main --league premier_league
 
-## Current Status
+# Scrape all configured leagues
+python -m src.scraping.main --all
 
+# Use a custom URL
+python -m src.scraping.main --url "https://fbref.com/en/comps/9/schedule/Premier-League-Scores-and-Fixtures"
+```
+
+### 🧮 Data Processing
+Process raw CSV files into standardized formats:
+
+```bash
+# Process a specific file
+python -m src.data.process_csv --csv "path/to/file.csv"
+
+# Process all CSV files in the raw folder
+python -m src.data.process_csv --all
+
+# Run with verbose output
+python -m src.data.process_csv --verbose
+```
+
+### 📊 Analysis
+Run exploratory analysis using the Jupyter notebook:
+
+- 🔬 Open `exploratory_analysis.ipynb` to explore data distributions, correlations, and trends.
+- 📝 Evaluate predictive models: Open `model_evaluation.ipynb` to see model performance comparisons.
+
+## ⚙️ Configuration
+The project uses configuration files to control data processing:
+
+- `config_url.yaml` - Controls web scraping behavior:
+    - 🔗 League URLs
+    - 📋 Data extraction rules
+    - 📝 Logging settings
+    - ⚠️ Error handling settings
+- `config_csv.yaml` - Controls CSV processing behavior:
+    - 📑 Column specifications
+    - 🏢 Team name normalization
+    - 📂 File paths and patterns
+    - 🔄 Processing workflow
+    - 📝 Logging settings
+
+
+## 💻 Tech Stack
+- **Data Collection**: 🕷️ Python web scraping with pandas
+- **Data Processing**: 🐼 Pandas, 🔢 NumPy
+- **Analysis**: 🧠 Scikit-learn, 📊 Matplotlib, 🌊 Seaborn
+- **Testing**: 🔍 Unittest, ✅ pytest
+
+## 🚧 Current Status
 This project is in active development with ongoing work on data collection and preprocessing pipelines.
 
-## Contributing
-
+## 👥 Contributing
 Contributions are welcome! Please submit pull requests or open issues for any suggestions.
 
-## License
-
+## 📄 License
 This project is licensed under the MIT License.

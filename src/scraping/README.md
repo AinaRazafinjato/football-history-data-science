@@ -1,37 +1,30 @@
 # Script Usage Examples
 
-## Basic Usage
+### 🌐 Data Collection
+The project uses web scraping to collect football match data from fbref.com. The main script is located in `main.py`.:
+
 ```bash
-# Récupérer les données de la ligue par défaut
+# Basic usage - scrape default league
 python -m main
-```
 
-## Specific League
-```bash
-# Récupérer les données d'une ligue spécifique
+# Scrape a specific league
 python -m main --league premier_league
-```
 
-## Multiple Leagues
-```bash
-# Récupérer les données de toutes les ligues configurées
+# Scrape all configured leagues
 python -m main --all
-```
 
-## Historical Data
-```bash
-# Récupérer les données historiques (si activé dans la config)
-python -m main --historical
-```
-
-## Custom URL
-```bash
-# Utiliser une URL personnalisée
+# Use a custom URL
 python -m main --url "https://fbref.com/en/comps/9/schedule/Premier-League-Scores-and-Fixtures"
 ```
 
-## Testing (No Save)
+### 📜 Additional Options
+
 ```bash
-# Ne pas sauvegarder les données (juste les récupérer)
+# Retrieve historical data (if enabled in config)
+python -m main --historical
+
+# Just fetch data without saving (testing mode)
 python -m main --all --no-save
 ```
+
+The script supports various options through command-line arguments and loads configurations from YAML files for flexible data collecting.
