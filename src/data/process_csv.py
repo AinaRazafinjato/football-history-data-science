@@ -6,6 +6,136 @@ import pandas as pd
 from pathlib import Path
 from loguru import logger
 
+# Define default configuration for fallback
+DEFAULT_CONFIG = {
+    "columns": {
+        "rows_to_drop": ["Date", "Home", "Away", "Venue"],
+        "columns_to_drop": ["Day", "Match Report", "Notes", "Venue", "Attendance", "Referee"],
+        "required_columns": ["Score", "Wk"],
+        "cols_to_convert_int": ["Wk", "Score_Home", "Score_Away"],
+        "cols_to_convert_float": ["xG_Home", "xG_Away"],
+        "cols_order": ["Wk", "Date", "Time", "Home", "xG_Home", "Score_Home", 
+                      "Score_Away", "xG_Away", "Away"]
+    },
+    "team_name_corrections": {
+        "Utd": "United", "Nott'ham": "Nottingham", "Wolves": "Wolverhampton Wanderers",
+        "Brighton": "Brighton & Hove Albion", "Tottenham": "Tottenham Hotspur",
+        "West Ham": "West Ham United", "FC": "", "AFC": "", "Man": "Manchester",
+        "Spurs": "Tottenham Hotspur"
+    },
+    "paths": {
+        "raw_dir": "raw",
+        "processed_dir": "processed",
+        "logs_dir": "logs"
+    },
+    "files": {
+        "default_csv": "raw/Premier-League-2024-2025.csv",
+        "process_all": True,
+        "file_pattern": "*.csv"
+    }
+}
+
+# Global variables that will be initialized when needed
+CONFIG = None
+ROWS_TO_DROP = None
+COLUMNS_TO_DROP = None
+REQUIRED_COLUMNS = None
+COLS_TO_CONVERT_INT = None
+COLS_TO_CONVERT_FLOAT = None
+COLS_ORDER = None
+TEAM_NAME_CORRECTIONS = None
+BASE_DIR = None
+DATA_DIR = None
+RAW_DIR = None
+PROCESSED_DIR = None
+LOG_DIR = None
+
+def init_config(config_path="config_csv.yaml"):
+    """
+    Initialize the configuration and global variables.
+    
+    Args:
+        config_path (str): Path to the configuration file
+        
+    Returns:
+        dict: The loaded configuration
+    """
+    global CONFIG, ROWS_TO_DROP, COLUMNS_TO_DROP, REQUIRED_COLUMNS
+    global COLS_TO_CONVERT_INT, COLS_TO_CONVERT_FLOAT, COLS_ORDER, TEAM_NAME_CORRECTIONS
+    global BASE_DIR, DATA_DIR, RAW_DIR, PROCESSED_DIR, LOG_DIR
+    
+    # Load configuration
+    CONFIG = load_config(config_path)
+    
+    # Extract constants from configuration
+    ROWS_TO_DROP = CONFIG["columns"]["rows_to_drop"]
+    COLUMNS_TO_DROP = CONFIG["columns"]["columns_to_drop"]
+    REQUIRED_COLUMNS = CONFIG["columns"]["required_columns"]
+    COLS_TO_CONVERT_INT = CONFIG["columns"]["cols_to_convert_int"]
+    COLS_TO_CONVERT_FLOAT = CONFIG["columns"]["cols_to_convert_float"]
+    COLS_ORDER = CONFIG["columns"]["cols_order"]
+    TEAM_NAME_CORRECTIONS = CONFIG["team_name_corrections"]
+    
+    # Define base directory and file directories
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    DATA_DIR = os.path.join(BASE_DIR, 'data')
+    
+    # Convert string paths to Path objects
+    RAW_DIR = Path(os.path.join(DATA_DIR, CONFIG["paths"]["raw_dir"]))
+    PROCESSED_DIR = Path(os.path.join(DATA_DIR, CONFIG["paths"]["processed_dir"]))
+    LOG_DIR = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), CONFIG["paths"]["logs_dir"]))
+    
+    # Create directories if they don't exist
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    
+    return CONFIG
+
+def setup_logger(verbose=False):
+    """
+    Configure the logger based on settings.
+    
+    Args:
+        verbose (bool): Whether to enable verbose logging
+    """
+    global LOG_DIR
+    
+    # Ensure LOG_DIR is initialized
+    if LOG_DIR is None:
+        init_config()
+    
+    # Remove default configuration
+    logger.remove()
+    
+    # Format with colors for terminal
+    CONSOLE_FORMAT = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>"
+    
+    # Format with color markers for log file
+    FILE_FORMAT = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>"
+    
+    # File logger - with markup to preserve color information
+    logger.add(
+        os.path.join(LOG_DIR, "process_csv_{time:YYYY-MM-DD}.log"),
+        rotation="1 day",
+        retention="30 days",
+        level="DEBUG" if verbose else "INFO",
+        format=FILE_FORMAT,
+        colorize=True,
+        backtrace=True,
+        diagnose=True
+    )
+    
+    # Console logger - with colors enabled
+    logger.add(
+        sys.stdout,
+        level="DEBUG" if verbose else "INFO",
+        format=CONSOLE_FORMAT,
+        colorize=True,
+        backtrace=True,
+        diagnose=True
+    )
+
 def load_config(config_path="config_csv.yaml"):
     """
     Charge la configuration depuis un fichier YAML.
@@ -17,12 +147,26 @@ def load_config(config_path="config_csv.yaml"):
         dict: Configuration chargée.
     """
     try:
+        # Get the directory of the current script
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # If config_path is not absolute, make it relative to current_dir
+        if not os.path.isabs(config_path):
+            config_path = os.path.join(current_dir, config_path)
+            
+        logger.info(f"Loading configuration from: {config_path}")
+        
+        if not os.path.exists(config_path):
+            logger.warning(f"Configuration file not found: {config_path}, using default configuration")
+            return DEFAULT_CONFIG
+            
         with open(config_path, 'r') as file:
             config = yaml.safe_load(file)
             logger.info(f"Configuration chargée depuis {config_path}")
             return config
     except Exception as e:
-        logger.error(f"Erreur lors du chargement de la configuration: {e}")
+        logger.error(f"Erreur lors du chargement de la configuration: {e}, using default configuration")
+        return DEFAULT_CONFIG
 
 def parse_arguments():
     """
@@ -38,69 +182,6 @@ def parse_arguments():
     parser.add_argument("--all", action="store_true", help="Traiter tous les fichiers CSV dans le dossier raw")
     return parser.parse_args()
 
-# Charger les arguments de ligne de commande
-args = parse_arguments()
-
-# Charger la configuration
-CONFIG = load_config(args.config)
-
-# Extraire les constantes du fichier de configuration
-ROWS_TO_DROP = CONFIG["columns"]["rows_to_drop"]
-COLUMNS_TO_DROP = CONFIG["columns"]["columns_to_drop"]
-REQUIRED_COLUMNS = CONFIG["columns"]["required_columns"]
-COLS_TO_CONVERT_INT = CONFIG["columns"]["cols_to_convert_int"]
-COLS_TO_CONVERT_FLOAT = CONFIG["columns"]["cols_to_convert_float"]
-COLS_ORDER = CONFIG["columns"]["cols_order"]
-TEAM_NAME_CORRECTIONS = CONFIG["team_name_corrections"]
-
-# Définir le répertoire de base et les répertoires des fichiers
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DATA_DIR = os.path.join(BASE_DIR, 'data')
-
-# Convert string paths to Path objects
-RAW_DIR = Path(os.path.join(DATA_DIR, CONFIG["paths"]["raw_dir"]))
-PROCESSED_DIR = Path(os.path.join(DATA_DIR, CONFIG["paths"]["processed_dir"]))
-LOG_DIR = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), CONFIG["paths"]["logs_dir"]))
-
-# Create directories if they don't exist
-RAW_DIR.mkdir(parents=True, exist_ok=True)
-PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-LOG_DIR.mkdir(parents=True, exist_ok=True)
-
-# And for the default CSV file, use absolute path
-default_csv_path = os.path.join(RAW_DIR, os.path.basename(CONFIG["files"]["default_csv"]))
-
-# Configuration améliorée du logger avec des couleurs
-logger.remove()  # Supprimer la configuration par défaut
-
-# Format avec couleurs pour le terminal
-CONSOLE_FORMAT = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>"
-
-# Format avec marqueurs de couleur pour le fichier log
-FILE_FORMAT = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>"
-
-# Logger pour fichier - avec markup pour préserver les informations de couleur
-logger.add(
-    os.path.join(LOG_DIR, "process_csv_{time:YYYY-MM-DD}.log"),
-    rotation="1 day",
-    retention="30 days",
-    level="DEBUG" if args.verbose else "INFO",
-    format=FILE_FORMAT,
-    colorize=True,
-    backtrace=True,
-    diagnose=True
-)
-
-# Logger pour console - avec couleurs activées
-logger.add(
-    sys.stdout,
-    level="DEBUG" if args.verbose else "INFO",
-    format=CONSOLE_FORMAT,
-    colorize=True,
-    backtrace=True,
-    diagnose=True
-)
-
 def load_csv_data(csv_path):
     """
     Charge les données depuis un fichier CSV.
@@ -111,6 +192,12 @@ def load_csv_data(csv_path):
     Returns:
         pd.DataFrame: Le DataFrame chargé depuis le CSV.
     """
+    global RAW_DIR
+    
+    # Make sure RAW_DIR is initialized
+    if RAW_DIR is None:
+        init_config()
+    
     try:
         # Ensure we're using absolute path
         if not os.path.isabs(csv_path):
@@ -145,12 +232,21 @@ def clean_and_transform_data(df):
     Returns:
         pd.DataFrame: Le DataFrame nettoyé et transformé.
     """
+    # Make sure config is initialized
+    if ROWS_TO_DROP is None:
+        init_config()
+    
     logger.info("Début du nettoyage et de la transformation des données")
     
     # Supprimer les lignes avec des valeurs manquantes dans les colonnes clés
+    # But only check columns that actually exist in the dataframe
     initial_rows = len(df)
-    df = df.dropna(subset=ROWS_TO_DROP)
-    logger.info(f"{initial_rows - len(df)} lignes supprimées pour données manquantes")
+    existing_drop_cols = [col for col in ROWS_TO_DROP if col in df.columns]
+    if existing_drop_cols:
+        df = df.dropna(subset=existing_drop_cols)
+        logger.info(f"{initial_rows - len(df)} lignes supprimées pour données manquantes")
+    else:
+        logger.warning("Aucune colonne à utiliser pour supprimer les lignes avec valeurs manquantes")
     
     # Supprimer les colonnes inutiles (une seule fois)
     columns_to_drop_existing = [col for col in COLUMNS_TO_DROP if col in df.columns]
@@ -239,11 +335,27 @@ def normalize_team_name(team_name):
     Returns:
         str: Le nom normalisé de l'équipe.
     """
+    # Make sure config is initialized
+    if TEAM_NAME_CORRECTIONS is None:
+        init_config()
+    
     if not isinstance(team_name, str):
         return str(team_name)
-        
+    
+    # Handle special cases for full team names
+    if team_name == "Tottenham Spurs":
+        return "Tottenham Hotspur"
+    
+    # Process individual words
     words = team_name.split()
-    normalized_words = [TEAM_NAME_CORRECTIONS.get(word, word) for word in words]
+    normalized_words = []
+    
+    for word in words:
+        # Replace word if it has a correction
+        replacement = TEAM_NAME_CORRECTIONS.get(word, word)
+        normalized_words.append(replacement)
+    
+    # Filter out empty strings and join with spaces
     return " ".join(filter(None, normalized_words))
 
 
@@ -281,6 +393,12 @@ def save_to_csv(df, filename):
         df (pd.DataFrame): Le DataFrame à sauvegarder.
         filename (str): Le nom du fichier CSV.
     """
+    global PROCESSED_DIR
+    
+    # Make sure PROCESSED_DIR is initialized
+    if PROCESSED_DIR is None:
+        init_config()
+    
     csv_path = PROCESSED_DIR / filename
     logger.info(f"Sauvegarde des données dans {csv_path}")
     try:
@@ -321,6 +439,12 @@ def process_all_csv_files():
     Returns:
         int: Nombre de fichiers traités avec succès
     """
+    global CONFIG, RAW_DIR
+    
+    # Make sure config is initialized
+    if CONFIG is None:
+        init_config()
+    
     logger.info(f"Recherche des fichiers CSV dans {RAW_DIR}")
     
     # Chercher tous les fichiers CSV dans le dossier raw
@@ -347,31 +471,47 @@ def process_all_csv_files():
     logger.success(f"{success_count}/{len(csv_files)} fichiers traités avec succès")
     return success_count
 
-# Utilisation
-if __name__ == "__main__":
+def main():
+    """Main function to run the script from command line."""
     try:
+        # Parse command line arguments
+        args = parse_arguments()
+        
+        # Initialize configuration and global variables
+        init_config(args.config)
+        
+        # Setup logging
+        setup_logger(args.verbose)
+        
         logger.info("Démarrage du script process_csv.py")
         logger.info(f"Dossier de données: {DATA_DIR}")
         logger.info(f"Dossier raw: {RAW_DIR}")
         logger.info(f"Dossier processed: {PROCESSED_DIR}")
         
-        # Déterminer si nous devons traiter tous les fichiers
+        # Determine if we should process all files
         process_all = args.all or CONFIG.get("files", {}).get("process_all", False)
         
         if process_all:
-            # Traiter tous les fichiers CSV dans le dossier raw
+            # Process all CSV files in the raw directory
             files_processed = process_all_csv_files()
             if files_processed > 0:
                 logger.success(f"Traitement par lot terminé. {files_processed} fichiers traités.")
             else:
                 logger.warning("Aucun fichier n'a été traité.")
         else:
-            # Traiter un seul fichier spécifié
+            # Process a single specified file
+            default_csv_path = os.path.join(RAW_DIR, os.path.basename(CONFIG["files"]["default_csv"]))
             csv_path = args.csv if args.csv else default_csv_path
             df = process_csv_data(csv_path)
             logger.success("Les données ont été traitées et sauvegardées avec succès.")
             
+        return 0
+        
     except Exception as e:
         logger.error(f"Une erreur s'est produite: {e}")
         print(f"Une erreur s'est produite : {e}")
-        sys.exit(1)
+        return 1
+
+# Only execute when run as a script, not when imported
+if __name__ == "__main__":
+    sys.exit(main())

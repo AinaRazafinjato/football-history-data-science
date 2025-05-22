@@ -23,16 +23,13 @@ football_history/
 │   ├── processed/        # Cleaned and standardized data
 │   │   └── *-processed.csv # Processed league data files
 │   └── results/          # Results from models and analyses
-├── notebooks/            # Jupyter notebooks for analysis
-├── src/                  # Source code for the project
-│   ├── analysis/         # Exploratory data analysis functions
+├── src/                  # Source code
 │   ├── data/             # Data preprocessing functions
 │   │   ├── logs/         # Log folder for data processing
 │   │   │   └── *.log     # Log files for processing
 │   │   ├── process_csv.py# Main data processing script
 │   │   ├── config_csv.yaml# Configuration for processing
 │   │   └── README.md     # Usage examples for processing
-│   ├── models/           # Machine learning model implementation
 │   ├── scraping/         # Web scraping functionality
 │   │   ├── logs/         # Log folder for scraping
 │   │   │   └── *.log     # Log files for scraping
@@ -40,7 +37,6 @@ football_history/
 │   │   ├── main.py       # Script to run the scraper
 │   │   ├── config_url.yaml# Configuration for scraping
 │   │   └── README.md     # Usage examples for scraping
-│   └── utils/            # Utility functions
 ├── tests/                # Unit tests
 │   ├── test_scraping.py
 │   ├── test_preprocessing.py

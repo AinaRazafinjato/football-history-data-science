@@ -1,4 +1,4 @@
-from scrapers import WebScraper, scrape_league, scrape_all_leagues, load_config
+from .scrapers import WebScraper, scrape_league, scrape_all_leagues, load_config
 import argparse
 import sys
 import os

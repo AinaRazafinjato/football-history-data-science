@@ -3,18 +3,17 @@ __pycache__/
 *.pyc
 *.pyo
 
+# VScode settings
+.vscode/
+
 # Jupyter Notebook
 .ipynb_checkpoints/
 
 # Virtual environments
-venv/
-env/
+.env/
 
 # Environment variables
 .env
-
-# OS generated files
-.DS_Store
 
 # CSV files
 *.csv
